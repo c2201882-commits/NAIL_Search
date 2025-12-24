@@ -1,0 +1,5 @@
+{
+  "name": "ICT Pin Map Visualizer",
+  "description": "A professional tool for PCB test fixture engineers to upload Tebo-ICT nail files and visualize pin distributions with interactive zooming and labeling.",
+  "requestFramePermissions": []
+}
