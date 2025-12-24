@@ -36,6 +36,9 @@ const App: React.FC = () => {
   const [activePinId, setActivePinId] = useState<string | null>(null);
   const [activeResultIndex, setActiveResultIndex] = useState(-1);
 
+  // Pin Display Settings
+  const [pinScale, setPinScale] = useState(0.4);
+
   const handleFileUpload = useCallback(async (file: File) => {
     try {
       const text = await file.text();
@@ -45,6 +48,15 @@ const App: React.FC = () => {
       setSearchQuery('');
       setActivePinId(null);
       setActiveResultIndex(-1);
+
+      // Auto-calculate initial pin scale based on board dimensions
+      // A reasonable size is roughly 0.5% of the average dimension
+      const width = result.bounds.maxX - result.bounds.minX;
+      const height = result.bounds.maxY - result.bounds.minY;
+      const avgDim = (width + height) / 2;
+      const calculatedScale = Math.max(0.1, avgDim / 150); // Heuristic for visibility
+      setPinScale(calculatedScale);
+
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Failed to parse file.');
@@ -111,7 +123,7 @@ const App: React.FC = () => {
             </div>
             <div>
               <h1 className="text-lg font-black tracking-tight text-slate-800">PinLocator</h1>
-              <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest leading-none">ICT Suite 2.3</p>
+              <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest leading-none">ICT Suite 2.4</p>
             </div>
           </div>
 
@@ -193,11 +205,11 @@ const App: React.FC = () => {
           <div className="flex-1 flex overflow-hidden">
             {/* Map Area */}
             <div className="flex-1 p-4 relative">
-              <PinMap data={data} activePinId={activePinId} />
+              <PinMap data={data} activePinId={activePinId} pinScale={pinScale} />
               
               {/* Type Legend Floating */}
               <div className="absolute top-8 right-8 pointer-events-none">
-                <div className="bg-white/90 backdrop-blur shadow-xl border border-slate-200 rounded-2xl p-4 flex flex-col gap-3 pointer-events-auto">
+                <div className="bg-white/90 backdrop-blur shadow-xl border border-slate-200 rounded-2xl p-4 flex flex-col gap-3 pointer-events-auto w-40">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-2">Legend</h4>
                   <div className="flex flex-col gap-2">
                     {uniqueTypes.map(type => (
@@ -208,15 +220,39 @@ const App: React.FC = () => {
                     ))}
                     <div className="flex items-center gap-2 pt-1 mt-1 border-t border-slate-100">
                       <span className="w-2.5 h-2.5 rounded-full shadow-sm bg-red-500 animate-pulse"></span>
-                      <span className="text-[11px] font-black text-red-600 uppercase">Search Active</span>
+                      <span className="text-[11px] font-black text-red-600 uppercase">Searching</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Sidebar with Stats Only */}
+            {/* Sidebar with Stats & Controls */}
             <div className="w-80 border-l border-slate-200 bg-white overflow-y-auto p-6 hidden lg:flex flex-col gap-6">
+              {/* Pin Size Control */}
+              <section className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <h3 className="text-xs font-black text-slate-400 uppercase mb-4 tracking-widest">Pin Display</h3>
+                <div className="flex flex-col gap-3">
+                  <div className="flex justify-between items-center text-[10px] font-black text-slate-500 uppercase">
+                    <span>Pin Size</span>
+                    <span className="bg-white px-1.5 py-0.5 rounded border border-slate-200">{pinScale.toFixed(2)}</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="0.05" 
+                    max="5" 
+                    step="0.05"
+                    value={pinScale}
+                    onChange={(e) => setPinScale(parseFloat(e.target.value))}
+                    className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  />
+                  <div className="flex justify-between text-[9px] font-bold text-slate-300">
+                    <span>Small</span>
+                    <span>Large</span>
+                  </div>
+                </div>
+              </section>
+
               <section>
                 <h3 className="text-xs font-black text-slate-400 uppercase mb-5 tracking-widest">Layout Summary</h3>
                 <div className="grid grid-cols-1 gap-4">
@@ -284,7 +320,7 @@ const App: React.FC = () => {
             <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse shadow-[0_0_8px_rgba(59,130,246,0.5)]"></span>
             System Ready
           </span>
-          <span className="bg-slate-100 px-2 py-1 rounded">V2.3 STABLE</span>
+          <span className="bg-slate-100 px-2 py-1 rounded">V2.4 STABLE</span>
         </div>
       </footer>
     </div>

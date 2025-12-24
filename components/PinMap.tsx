@@ -5,6 +5,7 @@ import { ParseResult, NailData } from '../types';
 interface PinMapProps {
   data: ParseResult;
   activePinId: string | null;
+  pinScale: number; // Added pinScale prop
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -26,7 +27,7 @@ const getPinColor = (type: string) => {
   return `hsl(${hue}, 70%, 50%)`;
 };
 
-const PinMap: React.FC<PinMapProps> = ({ data, activePinId }) => {
+const PinMap: React.FC<PinMapProps> = ({ data, activePinId, pinScale }) => {
   const { nails, bounds } = data;
   const svgRef = useRef<SVGSVGElement>(null);
   
@@ -48,14 +49,10 @@ const PinMap: React.FC<PinMapProps> = ({ data, activePinId }) => {
     if (activePinId) {
       const pin = nails.find(n => n.id === activePinId);
       if (pin) {
-        // Target center of viewport
         const centerX = viewBoxX + width / 2;
         const centerY = viewBoxY + height / 2;
-        
-        // Target zoom for finding pins
         const targetZoom = Math.max(zoom, 10);
         setZoom(targetZoom);
-
         setOffset({
           x: centerX / targetZoom - pin.x,
           y: centerY / targetZoom - pin.y
@@ -70,7 +67,8 @@ const PinMap: React.FC<PinMapProps> = ({ data, activePinId }) => {
       const isHovered = hoveredNail?.id === nail.id;
       const isActive = activePinId === nail.id;
       
-      const baseRadius = 0.4; 
+      // Use the pinScale prop to determine base radius
+      const baseRadius = pinScale; 
       const radius = baseRadius / Math.pow(zoom, 0.3);
 
       return (
@@ -80,15 +78,15 @@ const PinMap: React.FC<PinMapProps> = ({ data, activePinId }) => {
           onMouseLeave={() => setHoveredNail(null)}
           className="cursor-pointer"
         >
-          <circle cx={nail.x} cy={nail.y} r={2 / zoom} fill="transparent" />
+          <circle cx={nail.x} cy={nail.y} r={Math.max(2, pinScale * 5) / zoom} fill="transparent" />
           
           <circle
             cx={nail.x}
             cy={nail.y}
             r={isActive ? radius * 2.5 : radius}
-            fill={isActive ? "#ef4444" : color} // Red color for search highlight
+            fill={isActive ? "#ef4444" : color}
             stroke={isActive ? "white" : (isHovered ? "white" : "none")}
-            strokeWidth={isActive ? 0.8 / zoom : (0.2 / zoom)}
+            strokeWidth={isActive ? (0.8 * pinScale) / zoom : (0.2 * pinScale) / zoom}
             className="transition-all duration-300"
           />
           
@@ -99,7 +97,7 @@ const PinMap: React.FC<PinMapProps> = ({ data, activePinId }) => {
               r={radius * (isActive ? 4 : 1.8)}
               fill="none"
               stroke={isActive ? "#ef4444" : color}
-              strokeWidth={0.15 / zoom}
+              strokeWidth={(0.15 * pinScale) / zoom}
               className="animate-pulse"
             />
           )}
@@ -110,7 +108,7 @@ const PinMap: React.FC<PinMapProps> = ({ data, activePinId }) => {
               y={nail.y + radius * 0.5}
               fill={isActive ? "#ef4444" : "white"}
               className={`pointer-events-none font-mono select-none transition-all ${isActive ? 'font-black' : 'font-bold opacity-80'}`}
-              style={{ fontSize: `${Math.max(0.4, (isActive ? 2.5 : 1.2) / Math.sqrt(zoom))}px` }}
+              style={{ fontSize: `${Math.max(0.2, (isActive ? 2.5 : 1.2) * pinScale / Math.sqrt(zoom))}px` }}
             >
               {nail.id}
             </text>
@@ -118,7 +116,7 @@ const PinMap: React.FC<PinMapProps> = ({ data, activePinId }) => {
         </g>
       );
     });
-  }, [nails, zoom, showLabels, hoveredNail, activePinId]);
+  }, [nails, zoom, showLabels, hoveredNail, activePinId, pinScale]);
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault();
